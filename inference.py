@@ -2,6 +2,7 @@ import torch
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from transformers import (
     DistilBertForSequenceClassification,
@@ -11,7 +12,9 @@ from transformers import (
 # ------------------ MODEL LOADING ------------------
 
 HF_MODEL = "Hitan2004/psysense-emotion-ai"
-LOCAL_LABEL_ENCODER = "model/label_encoder.pkl"
+
+BASE_DIR = os.path.dirname(__file__)
+LOCAL_LABEL_ENCODER = os.path.join(BASE_DIR, "model", "label_encoder.pkl")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
