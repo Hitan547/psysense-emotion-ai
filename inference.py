@@ -10,22 +10,24 @@ from transformers import (
 
 # ------------------ MODEL LOADING ------------------
 
-MODEL_DIR = "Hitan2004/psysense-emotion-ai"
+HF_MODEL = "Hitan2004/psysense-emotion-ai"
+LOCAL_LABEL_ENCODER = "model/label_encoder.pkl"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model = DistilBertForSequenceClassification.from_pretrained(MODEL_DIR)
+model = DistilBertForSequenceClassification.from_pretrained(HF_MODEL)
 model.to(device)
 model.eval()
 
-tokenizer = DistilBertTokenizerFast.from_pretrained(MODEL_DIR)
+tokenizer = DistilBertTokenizerFast.from_pretrained(HF_MODEL)
 
-with open(f"{MODEL_DIR}/label_encoder.pkl", "rb") as f:
+# ⭐ load local file
+with open(LOCAL_LABEL_ENCODER, "rb") as f:
     mlb = pickle.load(f)
 
 label_names = mlb.classes_
 
-print("✅ Model loaded successfully")
+print("✅ Model + tokenizer + label encoder loaded")
 
 
 # ------------------ PREDICTION FUNCTION ------------------
