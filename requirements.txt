@@ -1,9 +1,7 @@
-datasets
-pandas
-accelerate
-streamlit
-torch
-transformers
+streamlit==1.29.0
+altair==4.2.2
+torch==2.2.2
+transformers==4.41.2
 numpy
 matplotlib
 scikit-learn
