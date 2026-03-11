@@ -10,7 +10,7 @@ from transformers import (
 
 # ------------------ MODEL LOADING ------------------
 
-MODEL_DIR = "model"
+MODEL_DIR = "Hitan2004/psysense-emotion-ai"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
