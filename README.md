@@ -1,36 +1,47 @@
-# PsySense — Multi-Label Emotion Classification with DistilBERT
+# 🧠 PsySense — Multi-Label Emotion AI
 
-PsySense is a transformer-based natural language processing system that detects multiple simultaneous human emotions from text. The model is fine-tuned on the GoEmotions dataset using DistilBERT with class-weighted binary cross-entropy loss to address class imbalance and co-occurring emotional states.
-
-Unlike traditional sentiment classifiers that assign a single label, PsySense predicts dominant and secondary emotions with confidence scores, enabling more realistic emotion understanding in language.
-
----
-
-## Key Features
-
-- Multi-label emotion classification (28 emotions)
-- Transformer fine-tuning with DistilBERT
-- Class imbalance handling via weighted BCE loss
-- Confidence-ranked emotion predictions
-- Dominant and secondary emotion detection
-- Threshold-controlled emotion activation
-- Reproducible HuggingFace training pipeline
+🔗 **Live Demo:**
+https://psysense-emotion-ai-75rqc6axets9shtwledjui.streamlit.app/
 
 ---
 
-## Model Overview
+## 📌 Overview
 
-- **Base Model:** DistilBERT (uncased)
-- **Task:** Multi-label emotion classification
-- **Dataset:** GoEmotions (Google)
-- **Labels:** 28 emotion categories
-- **Loss Function:** BCEWithLogitsLoss with class weights
-- **Evaluation Metrics:** Micro-F1, Macro-F1
-- **Max Sequence Length:** 128 tokens
+**PsySense** is a Transformer-based Natural Language Processing system that detects **multiple simultaneous human emotions from text**.
+
+Unlike traditional sentiment analysis models that predict a single label (positive/negative), PsySense performs **multi-label emotion classification**, identifying both **dominant and secondary emotions with confidence scores**.
+
+The model is fine-tuned on Google’s **GoEmotions dataset** using **DistilBERT** with **class-weighted Binary Cross-Entropy Loss** to handle class imbalance and real-world emotional overlap.
 
 ---
 
-## Example Prediction
+## 🚀 Key Features
+
+* Multi-label emotion detection (28 emotions)
+* Dominant emotion identification
+* Secondary emotion detection
+* Confidence-based ranking of emotions
+* Threshold-controlled emotion activation
+* Real-time prediction using Streamlit UI
+* Transformer fine-tuning with HuggingFace
+* Class imbalance handling using weighted BCE loss
+* Interactive emotion probability visualization
+
+---
+
+## 🧠 Model Details
+
+* **Base Model:** DistilBERT (uncased)
+* **Task:** Multi-Label Emotion Classification
+* **Dataset:** GoEmotions (Google Research)
+* **Number of Labels:** 28 emotions
+* **Loss Function:** BCEWithLogitsLoss (with class weights)
+* **Evaluation Metrics:** Micro-F1, Macro-F1
+* **Max Sequence Length:** 128 tokens
+
+---
+
+## 📊 Example Prediction
 
 **Input**
 
@@ -41,97 +52,108 @@ I love you but I am scared
 **Output**
 
 ```
-Dominant Emotion: love (0.82)
+Dominant Emotion: Love (82%)
 
-Active Emotions:
-- love (0.82)
-- fear (0.67)
+Other Detected Emotions:
+• Fear — 67%  
+• Nervousness — 41%  
 
-Top Emotions:
-- love (0.82)
-- fear (0.67)
-- nervousness (0.41)
+Emotion Probability Distribution shown as bar graph.
 ```
 
 ---
 
-## Repository Structure
+## 🌐 Live Deployment
 
-```
-psysense-emotion-ai/
-├── psysense.py
-├── psysense_notebook.ipynb
-├── config.json
-├── tokenizer.json
-├── tokenizer_config.json
-├── label_encoder.pkl
-├── requirements.txt
-├── README.md
-└── .gitignore
-```
+The model is deployed as an interactive web application using **Streamlit Cloud**.
+
+Users can enter text and instantly receive:
+
+* Dominant emotion
+* Secondary emotions
+* Confidence scores
+* Emotion probability graph
 
 ---
 
-## Installation
+## ⚙️ Run Locally
 
-```bash
+Clone the repository:
+
+```
+git clone https://github.com/Hitan2004/psysense-emotion-ai.git
+cd psysense-emotion-ai
+```
+
+Install dependencies:
+
+```
 pip install -r requirements.txt
 ```
 
----
+Run Streamlit app:
 
-## Training
-
-```bash
-python psysense.py
+```
+streamlit run streamlit_app.py
 ```
 
 ---
 
-## Inference
+## 🤖 Model Weights
 
-```python
-from psysense import predict_emotions
+Model weights are hosted on **HuggingFace Hub** and will be automatically downloaded during inference.
 
-text = "I am happy but nervous"
-result = predict_emotions(text)
+HuggingFace Model:
+`Hitan2004/psysense-emotion-ai`
 
-print(result)
+---
+
+## 📂 Project Structure
+
+```
+psysense-emotion-ai/
+│
+├── streamlit_app.py        # Streamlit UI  
+├── inference.py            # Prediction pipeline  
+├── model/
+│   └── label_encoder.pkl  
+├── requirements.txt  
+├── README.md  
+└── .gitignore  
 ```
 
 ---
 
-## Use Cases
+## 🛠️ Tech Stack
 
-- Emotion analysis in text
-- Conversational AI emotion awareness
-- Psychological text analysis
-- Affective computing research
-- Human–computer interaction systems
-
----
-
-## Technical Stack
-
-- Python
-- PyTorch
-- HuggingFace Transformers
-- Scikit-learn
-- NumPy
-- Pandas
+* Python
+* PyTorch
+* HuggingFace Transformers
+* Streamlit
+* Scikit-learn
+* NumPy
+* Pandas
+* Matplotlib
 
 ---
 
-## Model Weights
+## 🎯 Use Cases
 
-Model weights are not included in this repository due to size constraints.  
-They can be generated by running the training script or obtained separately if required.
+* Emotion-aware conversational AI
+* Mental health text analysis tools
+* Human-computer interaction systems
+* Social media emotion analytics
+* Customer feedback emotion detection
+* Affective computing research
 
 ---
 
-## Author
+## 👨‍💻 Author
 
-**Hitan K**  
-AI/ML Engineer specializing in NLP and Emotion Recognition  
+**Hitan K**
+AI/ML Engineer — NLP & Emotion Recognition
 Bengaluru, India
-    
+
+---
+
+⭐ If you found this project interesting, consider giving it a star.
