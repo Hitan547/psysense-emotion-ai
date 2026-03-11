@@ -149,4 +149,4 @@ def plot_emotions(result):
     plt.title("Emotion Probability Distribution")
     plt.ylabel("Confidence")
     plt.tight_layout()
-    plt.show()
+    return plt
