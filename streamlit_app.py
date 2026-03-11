@@ -19,11 +19,24 @@ if st.button("Analyze Emotion"):
         emotion = result["dominant_emotion"]["label"]
         confidence = result["dominant_emotion"]["confidence"]
 
-        st.subheader(f"Dominant Emotion: {emotion}")
+        st.subheader(f"Dominant Emotion: {emotion.capitalize()}")
         st.write(f"Confidence: {confidence*100:.2f}%")
 
         st.write("Explanation:")
         st.info(explain_emotion(emotion))
 
-        st.write("Emotion Distribution:")
-        plot_emotions(result)
+        # ⭐ SHOW OTHER EMOTIONS
+        st.write("Other Detected Emotions:")
+        for e in result["active_emotions"]:
+            if e["label"] != emotion:
+                st.write(f"{e['label']} — {e['confidence']*100:.2f}%")
+
+        # ⭐ PROBABILITY TABLE
+        st.write("Emotion Probability Breakdown:")
+        for label, prob in result["top_emotions"]:
+            if prob > 0.01:
+                st.write(f"{label} — {prob*100:.2f}%")
+
+        # ⭐ GRAPH
+        fig = plot_emotions(result)
+        st.pyplot(fig)
