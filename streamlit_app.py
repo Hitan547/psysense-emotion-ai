@@ -1,114 +1,160 @@
 import streamlit as st
-import time
 from inference import predict_emotions, plot_emotions, explain_emotion
 
-st.set_page_config(page_title="PsySense Emotion AI", layout="wide")
+st.set_page_config(page_title="PsySense Emotion AI", layout="centered")
 
-# ---------- SESSION STATE ----------
-if "history" not in st.session_state:
-    st.session_state.history = []
+# ---------------- UI HEADER ----------------
 
-if "mood_scores" not in st.session_state:
-    st.session_state.mood_scores = []
-
-# ---------- UI HEADER ----------
-st.markdown("""
-<h1 style='text-align:center;'>🧠 PsySense Emotion AI</h1>
-<h4 style='text-align:center;color:gray;'>Understand human emotions from text</h4>
-""", unsafe_allow_html=True)
-
-st.divider()
-
-# ---------- CHAT STYLE INPUT ----------
-st.subheader("💬 How was your day?")
-
-user_text = st.text_area(
-    "Share your feelings",
-    placeholder="Example: I feel very stressed and tired today..."
+st.markdown(
+    """
+    <h1 style='text-align:center;'>🧠 PsySense Emotion AI Assistant</h1>
+    <p style='text-align:center; font-size:18px;'>
+    Understand your emotions • Get intelligent suggestions • Improve mental clarity
+    </p>
+    <hr>
+    """,
+    unsafe_allow_html=True
 )
 
-analyze = st.button("🔎 Analyze Emotion", use_container_width=True)
+# ---------------- Conversation Memory ----------------
 
-# ---------- ANALYSIS ----------
-if analyze:
+if "chat_started" not in st.session_state:
+    st.session_state.chat_started = False
 
-    if user_text.strip() == "":
-        st.warning("Please enter some text")
-    else:
+if "last_result" not in st.session_state:
+    st.session_state.last_result = None
 
-        with st.spinner("Analyzing emotions..."):
-            time.sleep(1)
-            result = predict_emotions(user_text)
 
-        emotion = result["dominant_emotion"]["label"]
-        confidence = result["dominant_emotion"]["confidence"]
+# ---------------- Advice Engine ----------------
 
-        # Save history
-        st.session_state.history.append((user_text, emotion))
-        st.session_state.mood_scores.append(confidence)
+def give_advice(emotion):
 
-        # ---------- RESULT CARD ----------
-        st.markdown("### 🎯 Dominant Emotion")
-        col1, col2 = st.columns([1,2])
+    advice_map = {
 
-        with col1:
-            st.metric(label="Emotion", value=emotion.capitalize())
-            st.metric(label="Confidence", value=f"{confidence*100:.1f}%")
+        "sadness": [
+            "Take a short walk or get some fresh air.",
+            "Talk to someone you trust.",
+            "Write your thoughts in a journal."
+        ],
 
-        with col2:
-            st.info(explain_emotion(emotion))
+        "fear": [
+            "Try deep breathing for 2 minutes.",
+            "Break your task into small steps.",
+            "Avoid overthinking future outcomes."
+        ],
 
-        st.divider()
+        "anger": [
+            "Pause before reacting.",
+            "Do a quick physical activity.",
+            "Reflect on what triggered the feeling."
+        ],
 
-        # ---------- OTHER EMOTIONS ----------
-        st.markdown("### 🌈 Other Detected Emotions")
+        "joy": [
+            "Use this positive energy to do productive work.",
+            "Share your happiness with others.",
+            "Practice gratitude."
+        ],
 
-        emotions = result["active_emotions"]
+        "love": [
+            "Express appreciation to someone important.",
+            "Strengthen your relationships.",
+            "Do something meaningful together."
+        ],
 
-        if len(emotions) > 1:
-            for e in emotions:
-                if e["label"] != emotion:
-                    st.progress(float(e["confidence"]))
-                    st.write(f"{e['label']} — {e['confidence']*100:.1f}%")
-        else:
-            st.write("No strong secondary emotions")
+        "neutral": [
+            "Set a small goal for today.",
+            "Stay mindful of your routine.",
+            "Plan something interesting."
+        ]
+    }
 
-        st.divider()
+    return advice_map.get(emotion, [
+        "Stay self-aware.",
+        "Maintain emotional balance.",
+        "Focus on positive habits."
+    ])
 
-        # ---------- GRAPH ----------
-        st.markdown("### 📊 Emotion Distribution")
-        fig = plot_emotions(result)
-        st.pyplot(fig)
 
-        st.divider()
+# ---------------- Conversation Start ----------------
 
-        # ---------- AI ADVICE ----------
-        st.markdown("### 🤖 AI Suggestion")
+if not st.session_state.chat_started:
 
-        advice_map = {
-            "sadness": "Try talking to a friend or going for a short walk.",
-            "fear": "Take deep breaths. Focus on what you can control.",
-            "anger": "Pause before reacting. Write your thoughts down.",
-            "joy": "Great! Capture this moment and keep building on it.",
-            "love": "Express gratitude to the person you care about.",
-            "nervousness": "Prepare small steps. Confidence grows gradually.",
-            "disappointment": "Reflect on what you learned and move forward."
-        }
+    st.subheader("💬 AI Assistant")
+    st.write("How was your day today?")
 
-        advice = advice_map.get(
-            emotion,
-            "Stay mindful. Emotions are temporary signals."
-        )
+    user_input = st.text_area("Share your feelings...")
 
-        st.success(advice)
+    if st.button("Analyze My Emotions"):
+        st.session_state.chat_started = True
+        st.session_state.user_text = user_input
+        st.rerun()
 
-# ---------- HISTORY ----------
-if len(st.session_state.history) > 0:
 
-    st.divider()
-    st.markdown("### 🕘 Conversation History")
+# ---------------- Emotion Analysis Section ----------------
 
-    for h in reversed(st.session_state.history[-5:]):
-        st.write(f"**You:** {h[0]}")
-        st.write(f"**Emotion:** {h[1]}")
-        st.write("---")
+else:
+
+    text = st.session_state.user_text
+
+    st.markdown(f"### 📝 You said: *{text}*")
+
+    result = predict_emotions(text)
+    st.session_state.last_result = result
+
+    emotion = result["dominant_emotion"]["label"]
+    confidence = result["dominant_emotion"]["confidence"]
+
+    # Dominant Emotion Card
+    st.markdown(
+        f"""
+        <div style="padding:15px;border-radius:10px;background:#1f3b4d;">
+        <h3> Dominant Emotion: {emotion.capitalize()}</h3>
+        <p>Confidence: {confidence*100:.2f}%</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Explanation
+    st.write("### 🧠 Emotion Insight")
+    st.info(explain_emotion(emotion))
+
+    # Multiple Emotions
+    st.write("### 🔎 Other Detected Emotions")
+    for e in result["active_emotions"]:
+        if e["label"] != emotion:
+            st.write(f"• {e['label'].capitalize()} — {e['confidence']*100:.2f}%")
+
+    # Probability Breakdown
+    st.write("### 📊 Emotion Probability Breakdown")
+    for label, prob in result["top_emotions"]:
+        if prob > 0.01:
+            st.write(f"{label.capitalize()} — {prob*100:.2f}%")
+
+    # Graph
+    st.write("### 📈 Emotion Distribution Graph")
+    fig = plot_emotions(result)
+    st.pyplot(fig)
+
+    # Advice Section
+    st.write("### 💡 AI Suggestions for You")
+
+    advice_list = give_advice(emotion)
+
+    for tip in advice_list:
+        st.success(tip)
+
+    # Next Step Suggestion
+    st.write("### 🚀 Suggested Next Step")
+
+    st.markdown(
+        """
+        - Reflect on what caused this emotion  
+        - Take a small positive action today  
+        - Monitor how your mood changes over time  
+        """
+    )
+
+    if st.button("Start New Conversation"):
+        st.session_state.chat_started = False
+        st.rerun()
