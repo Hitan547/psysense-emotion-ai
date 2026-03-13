@@ -1,128 +1,114 @@
 import streamlit as st
+import time
 from inference import predict_emotions, plot_emotions, explain_emotion
-import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="PsySense Emotion AI", layout="wide")
 
-# ---------- THEME ----------
-
-st.markdown("""
-
-<style>
-.main {
-background: linear-gradient(120deg,#020617,#020617);
-color:white;
-}
-.chat-user {
-background:#1e293b;
-padding:12px;
-border-radius:12px;
-margin:8px 0;
-}
-.chat-ai {
-background:#0f172a;
-padding:12px;
-border-radius:12px;
-margin:8px 0;
-border-left:4px solid #38bdf8;
-}
-.big-title {
-font-size:42px;
-font-weight:700;
-}
-.subtitle {
-color:#94a3b8;
-font-size:18px;
-}
-</style>
-
-""", unsafe_allow_html=True)
-
-# ---------- SESSION MEMORY ----------
-
 # ---------- SESSION STATE ----------
-
 if "history" not in st.session_state:
     st.session_state.history = []
 
 if "mood_scores" not in st.session_state:
     st.session_state.mood_scores = []
 
-# ---------- HEADER ----------
-
-st.markdown("<div class='big-title'>🧠 PsySense Emotion Coach</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>AI that understands how you feel</div>", unsafe_allow_html=True)
+# ---------- UI HEADER ----------
+st.markdown("""
+<h1 style='text-align:center;'>🧠 PsySense Emotion AI</h1>
+<h4 style='text-align:center;color:gray;'>Understand human emotions from text</h4>
+""", unsafe_allow_html=True)
 
 st.divider()
 
-# ---------- INPUT ----------
+# ---------- CHAT STYLE INPUT ----------
+st.subheader("💬 How was your day?")
 
-user_text = st.text_input("How was your day?")
-
-if st.button("Analyze Emotion"):
-
-```
-result = predict_emotions(user_text)
-
-if "error" in result:
-    st.error(result["error"])
-
-else:
-
-    emotion = result["dominant_emotion"]["label"]
-    confidence = result["dominant_emotion"]["confidence"]
-
-    # Save history
-    st.session_state.history.append((user_text, emotion, confidence))
-    st.session_state.mood_scores.append(confidence)
-```
-
-# ---------- CHAT HISTORY ----------
-
-for text, emo, conf in st.session_state.history:
-
-```
-st.markdown(f"<div class='chat-user'>🙂 {text}</div>", unsafe_allow_html=True)
-
-st.markdown(
-    f"<div class='chat-ai'>🤖 Detected Emotion: <b>{emo.capitalize()}</b> ({conf*100:.1f}%)</div>",
-    unsafe_allow_html=True
+user_text = st.text_area(
+    "Share your feelings",
+    placeholder="Example: I feel very stressed and tired today..."
 )
 
-st.info(explain_emotion(emo))
+analyze = st.button("🔎 Analyze Emotion", use_container_width=True)
 
-# Advice engine
-if emo in ["sadness","grief","remorse","disappointment"]:
-    st.success("💡 Try talking to someone you trust or go for a short walk.")
+# ---------- ANALYSIS ----------
+if analyze:
 
-elif emo in ["fear","nervousness"]:
-    st.success("💡 Focus on preparation and breathing exercises.")
+    if user_text.strip() == "":
+        st.warning("Please enter some text")
+    else:
 
-elif emo in ["anger","annoyance"]:
-    st.success("💡 Pause before reacting. Physical activity helps release tension.")
+        with st.spinner("Analyzing emotions..."):
+            time.sleep(1)
+            result = predict_emotions(user_text)
 
-elif emo in ["joy","love","gratitude","pride"]:
-    st.success("💡 Great state 🙂 Use this energy for productive work.")
+        emotion = result["dominant_emotion"]["label"]
+        confidence = result["dominant_emotion"]["confidence"]
 
-else:
-    st.success("💡 Stay mindful. Emotional awareness builds intelligence.")
+        # Save history
+        st.session_state.history.append((user_text, emotion))
+        st.session_state.mood_scores.append(confidence)
 
-st.divider()
-```
+        # ---------- RESULT CARD ----------
+        st.markdown("### 🎯 Dominant Emotion")
+        col1, col2 = st.columns([1,2])
 
-# ---------- MOOD TREND ----------
+        with col1:
+            st.metric(label="Emotion", value=emotion.capitalize())
+            st.metric(label="Confidence", value=f"{confidence*100:.1f}%")
 
-if len(st.session_state.mood_scores) > 1:
+        with col2:
+            st.info(explain_emotion(emotion))
 
-```
-st.subheader("📈 Mood Confidence Trend")
+        st.divider()
 
-fig2 = plt.figure(figsize=(6,3))
-plt.plot(st.session_state.mood_scores, marker="o")
-plt.title("Emotion Confidence Over Time")
-plt.xlabel("Conversation Step")
-plt.ylabel("Confidence")
-plt.tight_layout()
+        # ---------- OTHER EMOTIONS ----------
+        st.markdown("### 🌈 Other Detected Emotions")
 
-st.pyplot(fig2)
-```
+        emotions = result["active_emotions"]
+
+        if len(emotions) > 1:
+            for e in emotions:
+                if e["label"] != emotion:
+                    st.progress(float(e["confidence"]))
+                    st.write(f"{e['label']} — {e['confidence']*100:.1f}%")
+        else:
+            st.write("No strong secondary emotions")
+
+        st.divider()
+
+        # ---------- GRAPH ----------
+        st.markdown("### 📊 Emotion Distribution")
+        fig = plot_emotions(result)
+        st.pyplot(fig)
+
+        st.divider()
+
+        # ---------- AI ADVICE ----------
+        st.markdown("### 🤖 AI Suggestion")
+
+        advice_map = {
+            "sadness": "Try talking to a friend or going for a short walk.",
+            "fear": "Take deep breaths. Focus on what you can control.",
+            "anger": "Pause before reacting. Write your thoughts down.",
+            "joy": "Great! Capture this moment and keep building on it.",
+            "love": "Express gratitude to the person you care about.",
+            "nervousness": "Prepare small steps. Confidence grows gradually.",
+            "disappointment": "Reflect on what you learned and move forward."
+        }
+
+        advice = advice_map.get(
+            emotion,
+            "Stay mindful. Emotions are temporary signals."
+        )
+
+        st.success(advice)
+
+# ---------- HISTORY ----------
+if len(st.session_state.history) > 0:
+
+    st.divider()
+    st.markdown("### 🕘 Conversation History")
+
+    for h in reversed(st.session_state.history[-5:]):
+        st.write(f"**You:** {h[0]}")
+        st.write(f"**Emotion:** {h[1]}")
+        st.write("---")
