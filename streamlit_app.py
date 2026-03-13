@@ -3,7 +3,7 @@ from inference import predict_emotions, plot_emotions, explain_emotion
 
 st.set_page_config(page_title="PsySense Emotion AI", layout="centered")
 
-st.title("🧠 PsySense Emotion A")
+st.title("🧠 PsySense Emotion AI")
 st.write("Enter text to detect emotions")
 
 text = st.text_area("Enter your sentence")
