@@ -40,14 +40,13 @@ font-size:18px;
 
 # ---------- SESSION MEMORY ----------
 
+# ---------- SESSION STATE ----------
+
 if "history" not in st.session_state:
     st.session_state.history = []
 
 if "mood_scores" not in st.session_state:
     st.session_state.mood_scores = []
-
-if "mood_scores" not in st.session_state:
-st.session_state.mood_scores = []
 
 # ---------- HEADER ----------
 
