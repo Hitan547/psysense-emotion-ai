@@ -5,58 +5,43 @@ from inference import predict_emotions, plot_emotions, explain_emotion
 st.set_page_config(
     page_title="PsySense Emotion AI",
     page_icon="🧠",
-    layout="centered"
+    layout="wide"
 )
 
-# ---------------- CUSTOM CSS ----------------
+# ---------------- HERO SECTION ----------------
 st.markdown("""
-<style>
+# 🧠 PsySense Emotion AI  
+### Understand Human Emotions from Text  
 
-.main {
-    background: linear-gradient(to right, #f8fafc, #eef2ff);
-}
+Detect **dominant and secondary emotions** using a fine-tuned Transformer model.
+""")
 
-.title {
-    text-align: center;
-    font-size: 42px;
-    font-weight: 700;
-    color: #4f46e5;
-}
+st.divider()
 
-.subtitle {
-    text-align: center;
-    font-size: 18px;
-    color: #6b7280;
-    margin-bottom: 30px;
-}
+# ---------------- INPUT SECTION ----------------
+col1, col2 = st.columns([2,1])
 
-.result-card {
-    padding: 20px;
-    border-radius: 12px;
-    background: white;
-    box-shadow: 0px 4px 20px rgba(0,0,0,0.05);
-    margin-bottom: 15px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- HEADER ----------------
-st.markdown('<div class="title">🧠 PsySense Emotion AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Multi-Label Emotion Detection using DistilBERT</div>', unsafe_allow_html=True)
-
-# ---------------- INPUT CARD ----------------
-with st.container():
-    st.markdown("### ✏️ Enter your text")
+with col1:
     text = st.text_area(
-        "",
-        height=150,
-        placeholder="Example: I feel happy but also nervous about tomorrow..."
+        "✍️ Enter your text",
+        placeholder="Example: I feel proud but also nervous about tomorrow...",
+        height=180
     )
 
-    analyze = st.button("🚀 Analyze Emotion")
+    analyze = st.button("🔍 Analyze Emotion", use_container_width=True)
 
-# ---------------- RESULT ----------------
+with col2:
+    st.info("""
+### 💡 How it works
+- Multi-label emotion detection  
+- Transformer based model  
+- Confidence scoring  
+- Emotion visualization  
+""")
+
+st.divider()
+
+# ---------------- RESULT SECTION ----------------
 if analyze:
 
     result = predict_emotions(text)
@@ -68,33 +53,58 @@ if analyze:
         emotion = result["dominant_emotion"]["label"]
         confidence = result["dominant_emotion"]["confidence"]
 
-        st.markdown("---")
+        # ---- DOMINANT EMOTION CARD ----
+        st.markdown("## 🎯 Dominant Emotion")
 
-        # ⭐ Dominant Emotion Card
-        st.markdown('<div class="result-card">', unsafe_allow_html=True)
-        st.subheader(f"🎯 Dominant Emotion: {emotion.capitalize()}")
-        st.progress(confidence)
-        st.write(f"Confidence: **{confidence*100:.2f}%**")
+        card_col1, card_col2 = st.columns([1,3])
 
-        st.info(explain_emotion(emotion))
-        st.markdown('</div>', unsafe_allow_html=True)
+        with card_col1:
+            st.metric(
+                label="Emotion",
+                value=emotion.capitalize()
+            )
 
-        # ⭐ Other emotions
-        st.markdown("### 🌈 Other Detected Emotions")
+        with card_col2:
+            st.progress(confidence)
 
-        cols = st.columns(3)
+            st.write(f"Confidence Score: **{confidence*100:.2f}%**")
 
-        idx = 0
+        st.success(explain_emotion(emotion))
+
+        st.divider()
+
+        # ---- SECONDARY EMOTIONS ----
+        st.markdown("## 🌈 Other Detected Emotions")
+
+        emotion_tags = []
         for e in result["active_emotions"]:
             if e["label"] != emotion:
-                with cols[idx % 3]:
-                    st.metric(
-                        label=e["label"].capitalize(),
-                        value=f"{e['confidence']*100:.1f}%"
-                    )
-                idx += 1
+                emotion_tags.append(
+                    f"**{e['label'].capitalize()}** ({e['confidence']*100:.1f}%)"
+                )
 
-        # ⭐ Graph
-        st.markdown("### 📊 Emotion Distribution")
+        if emotion_tags:
+            st.write(" | ".join(emotion_tags))
+        else:
+            st.write("No strong secondary emotions detected.")
+
+        st.divider()
+
+        # ---- PROBABILITY BREAKDOWN ----
+        st.markdown("## 📊 Emotion Probability Distribution")
+
+        for label, prob in result["top_emotions"]:
+            if prob > 0.01:
+                st.write(f"{label.capitalize():15} — {prob*100:.2f}%")
+
         fig = plot_emotions(result)
         st.pyplot(fig)
+
+        st.divider()
+
+# ---------------- FOOTER ----------------
+st.markdown("""
+---
+**PsySense AI • Multi-Label Emotion Intelligence System**  
+Built with ❤️ using Transformers & Streamlit  
+""")
