@@ -74,7 +74,7 @@ if analyze:
         st.divider()
 
         # ---- SECONDARY EMOTIONS ----
-        st.markdown("## 🌈 Other Detected Emotions")
+        st.markdown("##  Other Detected Emotions")
 
         emotion_tags = []
         for e in result["active_emotions"]:
@@ -106,5 +106,5 @@ if analyze:
 st.markdown("""
 ---
 **PsySense AI • Multi-Label Emotion Intelligence System**  
-Built with ❤️ using Transformers & Streamlit  
+Built using Transformers & Streamlit  
 """)
