@@ -1,160 +1,165 @@
 import streamlit as st
 from inference import predict_emotions, plot_emotions, explain_emotion
 
-st.set_page_config(page_title="PsySense Emotion AI", layout="centered")
-
-# ---------------- UI HEADER ----------------
-
-st.markdown(
-    """
-    <h1 style='text-align:center;'>🧠 PsySense Emotion AI Assistant</h1>
-    <p style='text-align:center; font-size:18px;'>
-    Understand your emotions • Get intelligent suggestions • Improve mental clarity
-    </p>
-    <hr>
-    """,
-    unsafe_allow_html=True
+st.set_page_config(
+    page_title="PsySense Emotion AI",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# ---------------- Conversation Memory ----------------
+# ---------- PREMIUM CSS ----------
+st.markdown("""
+<style>
 
-if "chat_started" not in st.session_state:
-    st.session_state.chat_started = False
+html, body, [class*="css"]  {
+    font-family: 'Inter', sans-serif;
+}
 
-if "last_result" not in st.session_state:
-    st.session_state.last_result = None
+.stApp {
+    background: linear-gradient(120deg,#0f172a,#020617);
+    color: #e5e7eb;
+}
 
+/* Center container */
+.main-container {
+    max-width: 900px;
+    margin: auto;
+    padding-top: 40px;
+}
 
-# ---------------- Advice Engine ----------------
+/* Title */
+.title {
+    font-size: 46px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
 
-def give_advice(emotion):
+/* Subtitle */
+.subtitle {
+    text-align: center;
+    font-size: 18px;
+    color: #9ca3af;
+    margin-bottom: 40px;
+}
 
-    advice_map = {
+/* Text box */
+textarea {
+    background-color: #020617 !important;
+    border-radius: 12px !important;
+    border: 1px solid #334155 !important;
+    padding: 15px !important;
+}
 
-        "sadness": [
-            "Take a short walk or get some fresh air.",
-            "Talk to someone you trust.",
-            "Write your thoughts in a journal."
-        ],
+/* Button */
+.stButton > button {
+    width: 100%;
+    border-radius: 12px;
+    height: 50px;
+    font-size: 18px;
+    background: linear-gradient(90deg,#6366f1,#22d3ee);
+    border: none;
+    color: white;
+    transition: 0.3s;
+}
 
-        "fear": [
-            "Try deep breathing for 2 minutes.",
-            "Break your task into small steps.",
-            "Avoid overthinking future outcomes."
-        ],
+.stButton > button:hover {
+    transform: scale(1.02);
+    box-shadow: 0px 0px 20px rgba(99,102,241,0.4);
+}
 
-        "anger": [
-            "Pause before reacting.",
-            "Do a quick physical activity.",
-            "Reflect on what triggered the feeling."
-        ],
+/* Result Card */
+.result-card {
+    background: #020617;
+    padding: 25px;
+    border-radius: 14px;
+    border: 1px solid #1e293b;
+    margin-top: 25px;
+}
 
-        "joy": [
-            "Use this positive energy to do productive work.",
-            "Share your happiness with others.",
-            "Practice gratitude."
-        ],
+</style>
+""", unsafe_allow_html=True)
 
-        "love": [
-            "Express appreciation to someone important.",
-            "Strengthen your relationships.",
-            "Do something meaningful together."
-        ],
+st.markdown("<div class='main-container'>", unsafe_allow_html=True)
 
-        "neutral": [
-            "Set a small goal for today.",
-            "Stay mindful of your routine.",
-            "Plan something interesting."
-        ]
-    }
+st.markdown("<div class='title'>🧠 PsySense Emotion AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Understand emotions from text using Transformer Intelligence</div>", unsafe_allow_html=True)
+text = st.text_area(
+    "How was your day?",
+    placeholder="Example: I feel proud but also nervous about tomorrow..."
+)
 
-    return advice_map.get(emotion, [
-        "Stay self-aware.",
-        "Maintain emotional balance.",
-        "Focus on positive habits."
-    ])
-
-
-# ---------------- Conversation Start ----------------
-
-if not st.session_state.chat_started:
-
-    st.subheader("💬 AI Assistant")
-    st.write("How was your day today?")
-
-    user_input = st.text_area("Share your feelings...")
-
-    if st.button("Analyze My Emotions"):
-        st.session_state.chat_started = True
-        st.session_state.user_text = user_input
-        st.rerun()
-
-
-# ---------------- Emotion Analysis Section ----------------
-
-else:
-
-    text = st.session_state.user_text
-
-    st.markdown(f"### 📝 You said: *{text}*")
+if st.button("🔎 Analyze Emotion"):
 
     result = predict_emotions(text)
-    st.session_state.last_result = result
 
-    emotion = result["dominant_emotion"]["label"]
-    confidence = result["dominant_emotion"]["confidence"]
+    if "error" in result:
+        st.error(result["error"])
 
-    # Dominant Emotion Card
-    st.markdown(
-        f"""
-        <div style="padding:15px;border-radius:10px;background:#1f3b4d;">
-        <h3> Dominant Emotion: {emotion.capitalize()}</h3>
-        <p>Confidence: {confidence*100:.2f}%</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    else:
 
-    # Explanation
-    st.write("### 🧠 Emotion Insight")
-    st.info(explain_emotion(emotion))
+        emotion = result["dominant_emotion"]["label"]
+        confidence = result["dominant_emotion"]["confidence"]
 
-    # Multiple Emotions
-    st.write("### 🔎 Other Detected Emotions")
-    for e in result["active_emotions"]:
-        if e["label"] != emotion:
-            st.write(f"• {e['label'].capitalize()} — {e['confidence']*100:.2f}%")
+        # ---------- RESULT CARD ----------
+        st.markdown("<div class='result-card'>", unsafe_allow_html=True)
 
-    # Probability Breakdown
-    st.write("### 📊 Emotion Probability Breakdown")
-    for label, prob in result["top_emotions"]:
-        if prob > 0.01:
-            st.write(f"{label.capitalize()} — {prob*100:.2f}%")
+        st.markdown(f"### Dominant Emotion → **{emotion.capitalize()}**")
 
-    # Graph
-    st.write("### 📈 Emotion Distribution Graph")
-    fig = plot_emotions(result)
-    st.pyplot(fig)
+        st.progress(float(confidence))
 
-    # Advice Section
-    st.write("### 💡 AI Suggestions for You")
+        st.write(f"Confidence Score: **{confidence*100:.1f}%**")
 
-    advice_list = give_advice(emotion)
+        st.write("### 🧠 Explanation")
+        st.info(explain_emotion(emotion))
 
-    for tip in advice_list:
-        st.success(tip)
+        # ---------- OTHER EMOTIONS ----------
+        st.write("### 🌈 Other Detected Emotions")
 
-    # Next Step Suggestion
-    st.write("### 🚀 Suggested Next Step")
+        cols = st.columns(4)
 
-    st.markdown(
-        """
-        - Reflect on what caused this emotion  
-        - Take a small positive action today  
-        - Monitor how your mood changes over time  
-        """
-    )
+        i = 0
+        for e in result["active_emotions"]:
+            if e["label"] != emotion:
+                cols[i % 4].markdown(
+                    f"""
+                    <div style="
+                        background:#020617;
+                        padding:10px;
+                        border-radius:10px;
+                        border:1px solid #1e293b;
+                        text-align:center;
+                        ">
+                        <b>{e['label'].capitalize()}</b><br>
+                        {e['confidence']*100:.1f}%
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                i += 1
 
-    if st.button("Start New Conversation"):
-        st.session_state.chat_started = False
-        st.rerun()
+        # ---------- GRAPH ----------
+        st.write("### 📊 Emotion Distribution")
+
+        fig = plot_emotions(result)
+        st.pyplot(fig)
+
+        # ---------- AI ADVICE ----------
+        st.write("### 🤖 AI Suggestion")
+
+        if emotion in ["sadness","grief","remorse","disappointment"]:
+            st.success("Try talking to someone you trust. Small positive activities can help shift emotional state.")
+
+        elif emotion in ["fear","nervousness"]:
+            st.success("Take deep breaths and focus on what you can control. Preparation reduces anxiety.")
+
+        elif emotion in ["anger","annoyance"]:
+            st.success("Pause before reacting. Physical movement or short breaks help release emotional tension.")
+
+        elif emotion in ["joy","love","gratitude","pride"]:
+            st.success("Great emotional state 🙂 Try journaling or sharing this positivity with others.")
+
+        else:
+            st.success("Stay mindful of your emotions. Awareness is the first step toward emotional intelligence.")
+
+        st.markdown("</div>", unsafe_allow_html=True)
