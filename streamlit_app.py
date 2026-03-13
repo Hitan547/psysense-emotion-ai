@@ -41,7 +41,10 @@ font-size:18px;
 # ---------- SESSION MEMORY ----------
 
 if "history" not in st.session_state:
-st.session_state.history = []
+    st.session_state.history = []
+
+if "mood_scores" not in st.session_state:
+    st.session_state.mood_scores = []
 
 if "mood_scores" not in st.session_state:
 st.session_state.mood_scores = []
