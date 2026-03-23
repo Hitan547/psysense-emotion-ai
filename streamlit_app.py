@@ -3,7 +3,7 @@ from inference import predict_emotions, plot_emotions, explain_emotion
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="PsySense Emotion AI",
+    page_title="GoEmotions Emotion Classifier",
     page_icon="🧠",
     layout="wide"
 )
