@@ -1,4 +1,4 @@
-# 🧠 PsySense — Multi-Label Emotion AI
+# 🧠 GoEmotions Emotion Classifier — DistilBERT Multi-Label NLP
 
 🔗 **Live Demo:**
 https://psysense-emotion-ai-75rqc6axets9shtwledjui.streamlit.app/
