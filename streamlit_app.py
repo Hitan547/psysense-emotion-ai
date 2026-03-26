@@ -39,7 +39,7 @@ def give_advice(emotion):
 
 # ---------------- HERO SECTION ----------------
 st.markdown("""
-# 🧠 PsySense Emotion AI  
+# 🧠 GoEmotions Emotion Classifier
 ### Understand Human Emotions from Text  
 
 Detect **dominant and secondary emotions** using a fine-tuned Transformer model.
