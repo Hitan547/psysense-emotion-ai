@@ -6,7 +6,7 @@ from inference import (
 
 # ── Page config ──────────────────────────────────────────────
 st.set_page_config(
-    page_title="GoEmotions Emotion Classifier",
+    page_title="PsySense — Emotion AI",
     page_icon="🧠",
     layout="wide"
 )
@@ -48,7 +48,7 @@ def give_advice(emotion):
 
 # ── Hero ─────────────────────────────────────────────────────
 st.markdown("""
-# 🧠 GoEmotions Emotion Classifier
+# 🧠 PsySense — Emotion AI
 ### Understand what you're feeling, and what to do about it
 """)
 st.divider()
@@ -163,6 +163,6 @@ if analyze:
 # ── Footer ───────────────────────────────────────────────────
 st.markdown("""
 ---
-**GoEmotions Emotion Classifier** • Emotion Understanding + AI Suggestion System  
+**PsySense AI** • Emotion Understanding + AI Suggestion System  
 Built with DistilBERT Transformers & Streamlit
 """)
