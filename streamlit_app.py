@@ -1,152 +1,168 @@
 import streamlit as st
-from inference import predict_emotions, plot_emotions, explain_emotion
+from inference import (
+    predict_emotions, plot_emotions,
+    explain_emotion, get_emoji
+)
 
-# ---------------- PAGE CONFIG ----------------
+# ── Page config ──────────────────────────────────────────────
 st.set_page_config(
     page_title="GoEmotions Emotion Classifier",
     page_icon="🧠",
     layout="wide"
 )
 
-# ---------------- AI ADVICE ENGINE ----------------
+# ── Advice engine — all 28 emotions covered ──────────────────
+ADVICE = {
+    "sadness":       "You don't have to carry this alone. Reach out to someone you trust, or try journaling your feelings.",
+    "grief":         "Grief takes time. Be gentle with yourself and allow the process to unfold at its own pace.",
+    "fear":          "Try box breathing: inhale 4s, hold 4s, exhale 4s. Writing down fears often reduces their power.",
+    "nervousness":   "Focus on what you can control. Preparation and grounding techniques can quiet nervous energy.",
+    "anger":         "Pause before reacting. Physical movement or journaling can help release built-up tension.",
+    "annoyance":     "A short break or change of environment can reset your perspective on small frustrations.",
+    "disappointment":"Reflect on what you learned. Every unmet expectation is a chance to refine your approach.",
+    "disapproval":   "It's okay to disagree. Consider whether it's worth expressing — and how to do so constructively.",
+    "disgust":       "Distance yourself from what triggered this. Your reaction is valid — trust your instincts.",
+    "remorse":       "Acknowledging a mistake takes courage. Consider what you can do to make amends and move forward.",
+    "embarrassment": "Everyone has awkward moments. They feel bigger to you than they look to others.",
+    "confusion":     "Break the problem into smaller pieces. Asking for clarification is always a sign of strength.",
+    "joy":           "Wonderful! Share this energy with someone, or use it to work on something meaningful to you.",
+    "excitement":    "Channel this energy into action — you're in a great state to start something new.",
+    "love":          "Connection is one of life's greatest gifts. Express gratitude and nurture your relationships.",
+    "gratitude":     "Gratitude is a superpower. Consider telling the person you're grateful for how you feel.",
+    "admiration":    "Let them know — expressing admiration can strengthen bonds and inspire others.",
+    "pride":         "You've earned this. Take a moment to acknowledge your effort before moving to the next goal.",
+    "optimism":      "This is a great mindset. Use it to tackle something you've been putting off.",
+    "caring":        "Your empathy is a strength. Make sure you're also caring for yourself, not just others.",
+    "curiosity":     "Follow that thread! Curiosity is the engine of learning — explore it.",
+    "desire":        "Clarify what you want, then think about one small step you can take toward it today.",
+    "amusement":     "Laughter is medicine. Spread it — share what made you smile.",
+    "surprise":      "Take a moment to process before reacting. Surprises can be good or bad — give it space.",
+    "relief":        "Take a deep breath and enjoy this lighter feeling. You've made it through something hard.",
+    "realization":   "Capture this insight before it fades — write it down or share it with someone.",
+    "neutral":       "A calm state is a great time for focused work, reflection, or learning something new.",
+}
+
 def give_advice(emotion):
+    return ADVICE.get(emotion, "Try mindfulness, rest, or talking to someone you trust.")
 
-    advice_map = {
 
-        "sadness": "It seems like you're feeling low. Consider talking to a friend or taking a short walk. Small steps can help improve mood.",
-
-        "fear": "Try deep breathing or grounding techniques. Writing down what worries you may help reduce anxiety.",
-
-        "anger": "Take a pause before reacting. Physical activity or journaling can help release emotional tension.",
-
-        "nervousness": "Preparation and structured thinking can reduce nervousness. Try focusing on what you can control.",
-
-        "joy": "That’s wonderful! Try to share this positive energy with someone or use it to work on something meaningful.",
-
-        "love": "Connection is powerful. Express gratitude and strengthen your relationships.",
-
-        "neutral": "Your emotional state seems balanced. This can be a great time to focus on productivity or learning.",
-
-        "disappointment": "Reflect on expectations vs reality. Use this as learning for future growth.",
-
-        "grief": "Give yourself time to process emotions. Talking to someone supportive can help healing."
-    }
-
-    return advice_map.get(
-        emotion,
-        "Try mindfulness, rest, or discussing your feelings with someone you trust."
-    )
-
-# ---------------- HERO SECTION ----------------
+# ── Hero ─────────────────────────────────────────────────────
 st.markdown("""
 # 🧠 GoEmotions Emotion Classifier
-### Understand Human Emotions from Text  
-
-Detect **dominant and secondary emotions** using a fine-tuned Transformer model.
+### Understand what you're feeling, and what to do about it
 """)
-
 st.divider()
 
-# ---------------- INPUT SECTION ----------------
-col1, col2 = st.columns([2,1])
+
+# ── Input ────────────────────────────────────────────────────
+col1, col2 = st.columns([2, 1])
 
 with col1:
     text = st.text_area(
-        "✍️ How was your day today?",
+        "✍️ Share what's on your mind...",
         placeholder="Example: I feel proud but also nervous about tomorrow...",
         height=180
     )
-
     analyze = st.button("🔍 Analyze My Emotions", use_container_width=True)
 
 with col2:
     st.info("""
 ### 💡 How it works
-- Multi-label emotion detection  
-- Transformer based NLP model  
-- Confidence scoring  
-- Emotion visualization  
-- AI emotional suggestions  
+- Fine-tuned DistilBERT transformer
+- Detects up to 28 distinct emotions
+- Multi-label: multiple emotions at once
+- Confidence scoring per emotion
+- Personalized emotional advice
 """)
 
 st.divider()
 
-# ---------------- RESULT SECTION ----------------
+
+# ── Results ──────────────────────────────────────────────────
 if analyze:
-
-    result = predict_emotions(text)
-
-    if "error" in result:
-        st.error(result["error"])
-
+    if not text or not text.strip():
+        st.warning("Please enter some text before analyzing.")
     else:
-        emotion = result["dominant_emotion"]["label"]
-        confidence = result["dominant_emotion"]["confidence"]
+        # Spinner gives user feedback while model runs
+        with st.spinner("Analyzing your emotions..."):
+            result = predict_emotions(text)
 
-        # ---------------- AI RESPONSE ----------------
-        st.markdown("## 🤖 AI Emotional Insight")
+        if "error" in result:
+            st.error(result["error"])
 
-        st.success(
-            f"I understand you may be feeling **{emotion}**. "
-            f"{explain_emotion(emotion)}"
-        )
+        else:
+            emotion    = result["dominant_emotion"]["label"]
+            confidence = result["dominant_emotion"]["confidence"]
+            emoji      = get_emoji(emotion)
 
-        st.info(
-            "### 🌱 Suggested Next Step\n"
-            + give_advice(emotion)
-        )
+            # ── AI Insight ───────────────────────────────────
+            st.markdown("## 🤖 AI Emotional Insight")
 
-        st.divider()
-
-        # ---- DOMINANT EMOTION CARD ----
-        st.markdown("## 🎯 Dominant Emotion")
-
-        card_col1, card_col2 = st.columns([1,3])
-
-        with card_col1:
-            st.metric(
-                label="Emotion",
-                value=emotion.capitalize()
+            st.success(
+                f"{emoji} **You seem to be feeling {emotion.capitalize()}.**\n\n"
+                f"{explain_emotion(emotion)}"
             )
 
-        with card_col2:
-            st.progress(confidence)
-            st.write(f"Confidence Score: **{confidence*100:.2f}%**")
+            st.info(
+                f"### 🌱 Suggested Next Step\n{give_advice(emotion)}"
+            )
 
-        st.divider()
+            st.divider()
 
-        # ---- SECONDARY EMOTIONS ----
-        st.markdown("##  Other Detected Emotions")
+            # ── Dominant emotion ─────────────────────────────
+            st.markdown("## 🎯 Dominant Emotion")
 
-        emotion_tags = []
-        for e in result["active_emotions"]:
-            if e["label"] != emotion:
-                emotion_tags.append(
-                    f"**{e['label'].capitalize()}** ({e['confidence']*100:.1f}%)"
-                )
+            m1, m2, m3 = st.columns(3)
+            m1.metric("Emotion",    emotion.capitalize())
+            m2.metric("Confidence", f"{confidence*100:.1f}%")
+            m3.metric("Emoji",      emoji)
 
-        if emotion_tags:
-            st.write(" | ".join(emotion_tags))
-        else:
-            st.write("No strong secondary emotions detected.")
+            st.progress(min(confidence, 1.0))
+            st.divider()
 
-        st.divider()
+            # ── Secondary emotions ───────────────────────────
+            st.markdown("## 🔁 Other Detected Emotions")
 
-        # ---- PROBABILITY BREAKDOWN ----
-        st.markdown("## 📊 Emotion Probability Distribution")
+            secondary = [
+                e for e in result["active_emotions"]
+                if e["label"] != emotion
+            ]
 
-        for label, prob in result["top_emotions"]:
-            if prob > 0.01:
-                st.write(f"{label.capitalize():15} — {prob*100:.2f}%")
+            if secondary:
+                # Show as native Streamlit progress bars — cleaner than plain text
+                for e in secondary:
+                    label_text = (
+                        f"{get_emoji(e['label'])}  "
+                        f"{e['label'].capitalize()} — "
+                        f"{e['confidence']*100:.1f}%"
+                    )
+                    st.write(label_text)
+                    st.progress(min(e["confidence"], 1.0))
+            else:
+                st.write("No strong secondary emotions detected.")
 
-        fig = plot_emotions(result)
-        st.pyplot(fig)
+            st.divider()
 
-        st.divider()
+            # ── Probability chart ─────────────────────────────
+            st.markdown("## 📊 Emotion Probability Distribution")
 
-# ---------------- FOOTER ----------------
+            fig = plot_emotions(result)
+            st.pyplot(fig)          # fig object, not plt module
+
+            st.divider()
+
+            # ── Raw breakdown table ───────────────────────────
+            with st.expander("🔬 Full Probability Breakdown"):
+                for label, prob in result["top_emotions"]:
+                    if prob > 0.005:
+                        col_a, col_b = st.columns([2, 3])
+                        col_a.write(f"{get_emoji(label)} {label.capitalize()}")
+                        col_b.progress(min(prob, 1.0))
+
+
+# ── Footer ───────────────────────────────────────────────────
 st.markdown("""
 ---
-**PsySense AI • Emotion Understanding + AI Suggestion System**  
-Built  using Transformers & Streamlit  
+**GoEmotions Emotion Classifier** • Emotion Understanding + AI Suggestion System  
+Built with DistilBERT Transformers & Streamlit
 """)
