@@ -185,17 +185,3 @@ if secondary:
 else:
     st.caption("No secondary emotions detected above threshold.")
 ```
-
----
-
-## What the output will look like after fixes
-
-**Input:** *"i had an interview today and it went good so i am very happy but i felt it could been more so i feel little sad"*
-```😊 You seem to be feeling Joy alongside Sadness and Disappointment.
-
-You're feeling happiness and positive energy.
-
-🌱 Suggested Next Steps
-For your joy: Wonderful! Share this energy with someone...
-For your sadness: You don't have to carry this alone...
-For your disappointment: Reflect on what you learned...
