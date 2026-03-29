@@ -184,4 +184,4 @@ if secondary:
         st.progress(min(e["confidence"], 1.0))
 else:
     st.caption("No secondary emotions detected above threshold.")
-```
+
