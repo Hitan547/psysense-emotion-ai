@@ -95,74 +95,108 @@ if analyze:
             confidence = result["dominant_emotion"]["confidence"]
             emoji      = get_emoji(emotion)
 
-            # ── AI Insight ───────────────────────────────────
-            st.markdown("## 🤖 AI Emotional Insight")
+            # ── AI Insight ───────────────────────────────────────────────
+st.markdown("## 🤖 AI Emotional Insight")
 
-            st.success(
-                f"{emoji} **You seem to be feeling {emotion.capitalize()}.**\n\n"
-                f"{explain_emotion(emotion)}"
-            )
+emotion    = result["dominant_emotion"]["label"]
+confidence = result["dominant_emotion"]["confidence"]
+emoji      = get_emoji(emotion)
 
-            st.info(
-                f"### 🌱 Suggested Next Step\n{give_advice(emotion)}"
-            )
+# Collect all active emotions excluding dominant
+secondary = [
+    e for e in result["active_emotions"]
+    if e["label"] != emotion
+]
 
-            st.divider()
+# ── Case 1: Low confidence dominant — model is uncertain ─────
+if confidence < 0.35:
+    st.warning(
+        f"💭 **Your emotions seem mixed or complex.**\n\n"
+        f"The strongest signal detected is **{emotion.capitalize()}** "
+        f"({confidence*100:.0f}% confidence), but it's not strongly dominant. "
+        f"This often happens when you're feeling several things at once."
+    )
 
-            # ── Dominant emotion ─────────────────────────────
-            st.markdown("## 🎯 Dominant Emotion")
+# ── Case 2: High confidence + secondary emotions ─────────────
+elif secondary:
+    secondary_labels = [
+        f"**{e['label'].capitalize()}**" for e in secondary[:3]
+    ]
+    blend_str = " and ".join(secondary_labels)
+    st.success(
+        f"{emoji} **You seem to be feeling {emotion.capitalize()} "
+        f"alongside {blend_str}.**\n\n"
+        f"{explain_emotion(emotion)}"
+    )
 
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Emotion",    emotion.capitalize())
-            m2.metric("Confidence", f"{confidence*100:.1f}%")
-            m3.metric("Emoji",      emoji)
+# ── Case 3: Single clear emotion ─────────────────────────────
+else:
+    st.success(
+        f"{emoji} **You seem to be feeling {emotion.capitalize()}.**\n\n"
+        f"{explain_emotion(emotion)}"
+    )
 
-            st.progress(min(confidence, 1.0))
-            st.divider()
+# ── Blended advice when multiple emotions present ─────────────
+if secondary:
+    all_emotions = [emotion] + [e["label"] for e in secondary[:2]]
+    advice_parts = []
 
-            # ── Secondary emotions ───────────────────────────
-            st.markdown("## 🔁 Other Detected Emotions")
+    for em in all_emotions:
+        advice = give_advice(em)
+        advice_parts.append(f"**For your {em}:** {advice}")
 
-            secondary = [
-                e for e in result["active_emotions"]
-                if e["label"] != emotion
-            ]
+    st.info(
+        "### 🌱 Suggested Next Steps\n" +
+        "\n\n".join(advice_parts)
+    )
+else:
+    st.info(
+        f"### 🌱 Suggested Next Step\n{give_advice(emotion)}"
+    )
 
-            if secondary:
-                # Show as native Streamlit progress bars — cleaner than plain text
-                for e in secondary:
-                    label_text = (
-                        f"{get_emoji(e['label'])}  "
-                        f"{e['label'].capitalize()} — "
-                        f"{e['confidence']*100:.1f}%"
-                    )
-                    st.write(label_text)
-                    st.progress(min(e["confidence"], 1.0))
-            else:
-                st.write("No strong secondary emotions detected.")
+st.divider()
 
-            st.divider()
+# ── Dominant emotion ──────────────────────────────────────────
+st.markdown("## 🎯 Dominant Emotion")
 
-            # ── Probability chart ─────────────────────────────
-            st.markdown("## 📊 Emotion Probability Distribution")
+# Warn user if confidence is low
+if confidence < 0.35:
+    st.caption("⚠️ Low confidence — emotions may be mixed or ambiguous")
 
-            fig = plot_emotions(result)
-            st.pyplot(fig)          # fig object, not plt module
+m1, m2, m3 = st.columns(3)
+m1.metric("Emotion",    emotion.capitalize())
+m2.metric("Confidence", f"{confidence*100:.1f}%")
+m3.metric("Emoji",      emoji)
+st.progress(min(confidence, 1.0))
+st.divider()
 
-            st.divider()
+# ── Secondary emotions ────────────────────────────────────────
+st.markdown("## 🔁 Other Detected Emotions")
 
-            # ── Raw breakdown table ───────────────────────────
-            with st.expander("🔬 Full Probability Breakdown"):
-                for label, prob in result["top_emotions"]:
-                    if prob > 0.005:
-                        col_a, col_b = st.columns([2, 3])
-                        col_a.write(f"{get_emoji(label)} {label.capitalize()}")
-                        col_b.progress(min(prob, 1.0))
+if secondary:
+    for e in secondary:
+        label_text = (
+            f"{get_emoji(e['label'])}  "
+            f"{e['label'].capitalize()} — "
+            f"{e['confidence']*100:.1f}%"
+        )
+        st.write(label_text)
+        st.progress(min(e["confidence"], 1.0))
+else:
+    st.caption("No secondary emotions detected above threshold.")
+```
 
-
-# ── Footer ───────────────────────────────────────────────────
-st.markdown("""
 ---
-**PsySense AI** • Emotion Understanding + AI Suggestion System  
-Built with DistilBERT Transformers & Streamlit
-""")
+
+## What the output will look like after fixes
+
+**Input:** *"i had an interview today and it went good so i am very happy but i felt it could been more so i feel little sad"*
+```
+😊 You seem to be feeling Joy alongside Sadness and Disappointment.
+
+You're feeling happiness and positive energy.
+
+🌱 Suggested Next Steps
+For your joy: Wonderful! Share this energy with someone...
+For your sadness: You don't have to carry this alone...
+For your disappointment: Reflect on what you learned...
