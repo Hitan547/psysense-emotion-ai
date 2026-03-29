@@ -38,7 +38,7 @@ label_names = mlb.classes_
 
 
 # ── Prediction ───────────────────────────────────────────────
-def predict_emotions(text, threshold=0.25, top_k=8):
+def predict_emotions(text, threshold=0.15, top_k=8):
     if not text or not text.strip():
         return {"error": "Empty input text"}
 
