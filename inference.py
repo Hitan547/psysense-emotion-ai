@@ -5,17 +5,19 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import os
-from functools import lru_cache
+
 from transformers import (
     DistilBertForSequenceClassification,
     DistilBertTokenizerFast
 )
 
+# ── Paths ─────────────────────────────────────────────────────
 HF_MODEL        = "Hitan2004/psysense-emotion-ai"
 BASE_DIR        = os.path.dirname(__file__)
 LOCAL_LABEL_ENC = os.path.join(BASE_DIR, "model", "label_encoder.pkl")
 
-# No streamlit here — caching is handled in streamlit_app.py
+
+# ── Model loader (called once from app.py via st.cache_resource) ──
 def load_model():
     device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model     = DistilBertForSequenceClassification.from_pretrained(HF_MODEL)
@@ -23,13 +25,18 @@ def load_model():
     model.to(device)
     model.eval()
     with open(LOCAL_LABEL_ENC, "rb") as f:
-        import pickle
         mlb = pickle.load(f)
+    print("✅ Model + tokenizer + label encoder loaded")
     return model, tokenizer, mlb, device
 
 
+# ── Prediction ────────────────────────────────────────────────
 def predict_emotions(model, tokenizer, label_names, device,
-                     text, threshold=0.15, top_k=8):
+                     text, threshold=0.10, top_k=10):
+    """
+    threshold=0.10  — lower than before so mixed emotions surface correctly
+    top_k=10        — show more emotions in breakdown
+    """
     if not text or not text.strip():
         return {"error": "Empty input text"}
 
@@ -51,10 +58,15 @@ def predict_emotions(model, tokenizer, label_names, device,
         "label":      label_names[sorted_idx[0]],
         "confidence": float(probs[sorted_idx[0]])
     }
+
+    # active = everything above threshold
     active_emotions = [
         {"label": label_names[i], "confidence": float(probs[i])}
-        for i in sorted_idx if probs[i] >= threshold
+        for i in sorted_idx
+        if probs[i] >= threshold
     ]
+
+    # top_k for chart and breakdown
     top_emotions = [
         (label_names[i], float(probs[i]))
         for i in sorted_idx[:top_k]
@@ -67,6 +79,7 @@ def predict_emotions(model, tokenizer, label_names, device,
     }
 
 
+# ── All 28 emotion explanations ───────────────────────────────
 EXPLANATIONS = {
     "admiration":    "You're expressing genuine respect or appreciation for someone.",
     "amusement":     "Something struck you as funny or entertaining.",
@@ -98,19 +111,8 @@ EXPLANATIONS = {
     "neutral":       "Your text doesn't carry strong emotional charge."
 }
 
-EMOJI_MAP = {
-    "admiration": "🤩", "amusement": "😂", "anger": "😠",
-    "annoyance": "😤",  "approval": "👍",  "caring": "🤗",
-    "confusion": "😕",  "curiosity": "🤔", "desire": "😍",
-    "disappointment": "😞", "disapproval": "👎", "disgust": "🤢",
-    "embarrassment": "😳", "excitement": "🎉", "fear": "😨",
-    "gratitude": "🙏",  "grief": "😢",     "joy": "😊",
-    "love": "❤️",       "nervousness": "😰", "optimism": "🌟",
-    "pride": "🏆",      "realization": "💡", "relief": "😮‍💨",
-    "remorse": "😔",    "sadness": "😢",    "surprise": "😲",
-    "neutral": "😐"
-}
 
+# ── All 28 advice entries ─────────────────────────────────────
 ADVICE = {
     "sadness":       "You don't have to carry this alone. Reach out to someone you trust, or try journaling.",
     "grief":         "Grief takes time. Be gentle with yourself and allow the process to unfold.",
@@ -136,9 +138,24 @@ ADVICE = {
     "desire":        "Clarify what you want, then take one small step toward it today.",
     "amusement":     "Laughter is medicine. Share what made you smile.",
     "surprise":      "Take a moment to process before reacting.",
-    "relief":        "Take a deep breath and enjoy this lighter feeling.",
+    "relief":        "Take a deep breath and enjoy this lighter feeling. You made it through.",
     "realization":   "Capture this insight before it fades — write it down.",
     "neutral":       "A calm state is a great time for focused work or learning.",
+}
+
+
+# ── Emoji map — all 28 ────────────────────────────────────────
+EMOJI_MAP = {
+    "admiration": "🤩", "amusement": "😂", "anger": "😠",
+    "annoyance": "😤",  "approval": "👍",  "caring": "🤗",
+    "confusion": "😕",  "curiosity": "🤔", "desire": "😍",
+    "disappointment": "😞", "disapproval": "👎", "disgust": "🤢",
+    "embarrassment": "😳", "excitement": "🎉", "fear": "😨",
+    "gratitude": "🙏",  "grief": "😢",     "joy": "😊",
+    "love": "❤️",       "nervousness": "😰", "optimism": "🌟",
+    "pride": "🏆",      "realization": "💡", "relief": "😮‍💨",
+    "remorse": "😔",    "sadness": "😢",    "surprise": "😲",
+    "neutral": "😐"
 }
 
 def explain_emotion(label):
@@ -150,7 +167,9 @@ def get_emoji(label):
 def give_advice(emotion):
     return ADVICE.get(emotion, "Try mindfulness, rest, or talking to someone you trust.")
 
-def plot_emotions(result, min_prob=0.01):
+
+# ── Chart — returns fig object (not plt module) ───────────────
+def plot_emotions(result, min_prob=0.02):
     labels, scores = [], []
     for label, prob in result["top_emotions"]:
         if prob >= min_prob:
@@ -158,22 +177,22 @@ def plot_emotions(result, min_prob=0.01):
             scores.append(prob)
 
     colors = [
-        "#2ecc71" if s >= 0.5 else "#f39c12" if s >= 0.25 else "#e74c3c"
+        "#2ecc71" if s >= 0.40 else "#f39c12" if s >= 0.15 else "#5dade2"
         for s in scores
     ]
 
-    fig, ax = plt.subplots(figsize=(9, 4))
+    fig, ax = plt.subplots(figsize=(10, 4))
     bars = ax.bar(labels, scores, color=colors, edgecolor="white", linewidth=0.6)
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, max(scores) * 1.25 if scores else 1)
     ax.set_ylabel("Confidence", fontsize=11)
     ax.set_title("Emotion Probability Distribution", fontsize=13, fontweight="bold")
-    ax.axhline(0.15, color="grey", linestyle="--", linewidth=0.8, label="Threshold (0.15)")
+    ax.axhline(0.10, color="grey", linestyle="--", linewidth=0.8, label="Threshold (0.10)")
 
     for bar, val in zip(bars, scores):
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.015,
-            f"{val*100:.0f}%",
+            bar.get_height() + 0.005,
+            f"{val*100:.1f}%",
             ha="center", va="bottom", fontsize=9
         )
 
