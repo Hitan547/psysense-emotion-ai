@@ -191,8 +191,7 @@ else:
 ## What the output will look like after fixes
 
 **Input:** *"i had an interview today and it went good so i am very happy but i felt it could been more so i feel little sad"*
-```
- You seem to be feeling Joy alongside Sadness and Disappointment.
+```😊 You seem to be feeling Joy alongside Sadness and Disappointment.
 
 You're feeling happiness and positive energy.
 
