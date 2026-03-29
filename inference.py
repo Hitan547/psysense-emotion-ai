@@ -2,43 +2,34 @@ import torch
 import pickle
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")          # headless backend — required for Streamlit
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import os
-import streamlit as st
-
-# ── Paths ────────────────────────────────────────────────────
-HF_MODEL          = "Hitan2004/psysense-emotion-ai"
-BASE_DIR          = os.path.dirname(__file__)
-LOCAL_LABEL_ENC   = os.path.join(BASE_DIR, "model", "label_encoder.pkl")
-
+from functools import lru_cache
 from transformers import (
     DistilBertForSequenceClassification,
     DistilBertTokenizerFast
 )
 
-# ── Model loading — cached so Streamlit never reloads it ─────
-# BUG FIX: without this, the 400MB model reloads on every click
-@st.cache_resource(show_spinner="Loading emotion model...")
+HF_MODEL        = "Hitan2004/psysense-emotion-ai"
+BASE_DIR        = os.path.dirname(__file__)
+LOCAL_LABEL_ENC = os.path.join(BASE_DIR, "model", "label_encoder.pkl")
+
+# No streamlit here — caching is handled in streamlit_app.py
 def load_model():
     device    = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model     = DistilBertForSequenceClassification.from_pretrained(HF_MODEL)
     tokenizer = DistilBertTokenizerFast.from_pretrained(HF_MODEL)
     model.to(device)
     model.eval()
-
     with open(LOCAL_LABEL_ENC, "rb") as f:
+        import pickle
         mlb = pickle.load(f)
-
-    print("✅ Model + tokenizer + label encoder loaded")
     return model, tokenizer, mlb, device
 
-model, tokenizer, mlb, device = load_model()
-label_names = mlb.classes_
 
-
-# ── Prediction ───────────────────────────────────────────────
-def predict_emotions(text, threshold=0.15, top_k=8):
+def predict_emotions(model, tokenizer, label_names, device,
+                     text, threshold=0.15, top_k=8):
     if not text or not text.strip():
         return {"error": "Empty input text"}
 
@@ -60,13 +51,10 @@ def predict_emotions(text, threshold=0.15, top_k=8):
         "label":      label_names[sorted_idx[0]],
         "confidence": float(probs[sorted_idx[0]])
     }
-
     active_emotions = [
         {"label": label_names[i], "confidence": float(probs[i])}
-        for i in sorted_idx
-        if probs[i] >= threshold
+        for i in sorted_idx if probs[i] >= threshold
     ]
-
     top_emotions = [
         (label_names[i], float(probs[i]))
         for i in sorted_idx[:top_k]
@@ -79,8 +67,6 @@ def predict_emotions(text, threshold=0.15, top_k=8):
     }
 
 
-# ── Explanations — all 28 emotions covered ───────────────────
-# BUG FIX: old version had only 6, everything else showed "Emotion detected."
 EXPLANATIONS = {
     "admiration":    "You're expressing genuine respect or appreciation for someone.",
     "amusement":     "Something struck you as funny or entertaining.",
@@ -112,11 +98,6 @@ EXPLANATIONS = {
     "neutral":       "Your text doesn't carry strong emotional charge."
 }
 
-def explain_emotion(label):
-    return EXPLANATIONS.get(label, "An emotion was detected in your text.")
-
-
-# ── Emoji map ────────────────────────────────────────────────
 EMOJI_MAP = {
     "admiration": "🤩", "amusement": "😂", "anger": "😠",
     "annoyance": "😤",  "approval": "👍",  "caring": "🤗",
@@ -130,17 +111,47 @@ EMOJI_MAP = {
     "neutral": "😐"
 }
 
+ADVICE = {
+    "sadness":       "You don't have to carry this alone. Reach out to someone you trust, or try journaling.",
+    "grief":         "Grief takes time. Be gentle with yourself and allow the process to unfold.",
+    "fear":          "Try box breathing: inhale 4s, hold 4s, exhale 4s. Writing down fears reduces their power.",
+    "nervousness":   "Focus on what you can control. Preparation and grounding techniques help.",
+    "anger":         "Pause before reacting. Physical movement or journaling can release tension.",
+    "annoyance":     "A short break or change of environment can reset your perspective.",
+    "disappointment":"Reflect on what you learned. Every unmet expectation refines your approach.",
+    "disapproval":   "It's okay to disagree. Consider how to express it constructively.",
+    "disgust":       "Distance yourself from what triggered this. Trust your instincts.",
+    "remorse":       "Acknowledging a mistake takes courage. Think about how to make amends and move forward.",
+    "embarrassment": "Everyone has awkward moments — they feel bigger to you than they look to others.",
+    "confusion":     "Break the problem into smaller pieces. Asking for clarification is always a strength.",
+    "joy":           "Wonderful! Share this energy or use it to work on something meaningful.",
+    "excitement":    "Channel this into action — you're in a great state to start something new.",
+    "love":          "Connection is one of life's greatest gifts. Nurture your relationships.",
+    "gratitude":     "Consider telling the person you're grateful for how you feel.",
+    "admiration":    "Let them know — expressing admiration can strengthen bonds.",
+    "pride":         "Take a moment to acknowledge your effort before moving to the next goal.",
+    "optimism":      "Use this mindset to tackle something you've been putting off.",
+    "caring":        "Your empathy is a strength. Make sure you're also caring for yourself.",
+    "curiosity":     "Follow that thread! Curiosity is the engine of learning.",
+    "desire":        "Clarify what you want, then take one small step toward it today.",
+    "amusement":     "Laughter is medicine. Share what made you smile.",
+    "surprise":      "Take a moment to process before reacting.",
+    "relief":        "Take a deep breath and enjoy this lighter feeling.",
+    "realization":   "Capture this insight before it fades — write it down.",
+    "neutral":       "A calm state is a great time for focused work or learning.",
+}
+
+def explain_emotion(label):
+    return EXPLANATIONS.get(label, "An emotion was detected in your text.")
+
 def get_emoji(label):
     return EMOJI_MAP.get(label, "💭")
 
+def give_advice(emotion):
+    return ADVICE.get(emotion, "Try mindfulness, rest, or talking to someone you trust.")
 
-# ── Visualization ────────────────────────────────────────────
-# BUG FIX: was returning plt (module) — now returns fig object
-# This prevents Streamlit double-render warnings and memory leaks
 def plot_emotions(result, min_prob=0.01):
-    labels = []
-    scores = []
-
+    labels, scores = [], []
     for label, prob in result["top_emotions"]:
         if prob >= min_prob:
             labels.append(label.capitalize())
@@ -153,11 +164,10 @@ def plot_emotions(result, min_prob=0.01):
 
     fig, ax = plt.subplots(figsize=(9, 4))
     bars = ax.bar(labels, scores, color=colors, edgecolor="white", linewidth=0.6)
-
     ax.set_ylim(0, 1)
     ax.set_ylabel("Confidence", fontsize=11)
     ax.set_title("Emotion Probability Distribution", fontsize=13, fontweight="bold")
-    ax.axhline(0.25, color="grey", linestyle="--", linewidth=0.8, label="Threshold (0.25)")
+    ax.axhline(0.15, color="grey", linestyle="--", linewidth=0.8, label="Threshold (0.15)")
 
     for bar, val in zip(bars, scores):
         ax.text(
@@ -170,4 +180,4 @@ def plot_emotions(result, min_prob=0.01):
     ax.tick_params(axis="x", rotation=35)
     ax.legend(fontsize=9)
     plt.tight_layout()
-    return fig            # ← return fig, NOT plt
+    return fig
