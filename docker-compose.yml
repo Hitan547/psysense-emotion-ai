@@ -3,18 +3,15 @@ version: "3.9"
 services:
   # ── FastAPI inference service ──────────────────────────────────────────────
   api:
-    build:
-      context: .
-      target: runtime
-    image: psysense-emotion-ai:latest
+    build: .
     container_name: psysense-api
     ports:
       - "8000:8000"
     environment:
-      - ENVIRONMENT=development
-      - LOG_LEVEL=INFO
-      - METRICS_ENABLED=true
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - TRANSFORMERS_CACHE=/app/.cache/transformers
+      - HF_HOME=/app/.cache/huggingface
+      - MPLCONFIGDIR=/app/.cache/matplotlib
+      - HOME=/app
     volumes:
       # Mount model directory so weights are not baked into the image during dev
       - ./model:/app/model:ro
