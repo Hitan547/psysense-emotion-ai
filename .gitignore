@@ -40,3 +40,22 @@ Thumbs.db
 # Data files (if any later)
 data/
 datasets/
+
+# Test and coverage artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+*.egg-info/
+
+# Docker build context cache
+.dockerignore
+
+# MLflow artifacts
+mlruns/
+mlartifacts/
+
+# Load test results
+load_test_results*.csv
+
+# Environment files (never commit secrets)
+.env
