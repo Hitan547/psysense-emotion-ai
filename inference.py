@@ -141,6 +141,7 @@ ADVICE = {
     "relief":        "Take a deep breath and enjoy this lighter feeling. You made it through.",
     "realization":   "Capture this insight before it fades — write it down.",
     "neutral":       "A calm state is a great time for focused work or learning.",
+    "approval":      "It feels good to affirm others. Keep spreading that positive energy.",
 }
 
 
