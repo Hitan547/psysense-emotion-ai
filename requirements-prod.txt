@@ -2,7 +2,7 @@
 # Pin versions to ensure reproducible builds.
 
 # ── Inference ──────────────────────────────────────────────────────────────────
-torch==2.3.1
+torch==2.6.0
 transformers==4.41.2
 safetensors==0.4.3
 scikit-learn==1.4.2
@@ -19,7 +19,7 @@ pydantic-settings==2.2.1
 prometheus-fastapi-instrumentator==7.0.0
 
 # ── MLflow integration ─────────────────────────────────────────────────────────
-mlflow==2.12.2
+mlflow==3.9.0
 
 # ── Testing ────────────────────────────────────────────────────────────────────
 pytest==8.2.0

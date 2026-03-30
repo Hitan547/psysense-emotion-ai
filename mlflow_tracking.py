@@ -20,7 +20,6 @@ import mlflow
 import mlflow.pyfunc
 import numpy as np
 import torch
-from mlflow.models.signature import infer_signature
 
 from config import settings
 from inference import load_model, predict_emotions
@@ -55,7 +54,7 @@ class EmotionModelWrapper(mlflow.pyfunc.PythonModel):
             mlb = pickle.load(fh)
         self.label_names = list(mlb.classes_)
 
-    def predict(self, context, model_input):  # noqa: D102
+    def predict(self, context, model_input, params=None):  # noqa: D102
         from inference import predict_emotions
 
         texts = (
