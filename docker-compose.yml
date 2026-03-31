@@ -8,10 +8,10 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - HOME=/app
       - TRANSFORMERS_CACHE=/app/.cache/transformers
       - HF_HOME=/app/.cache/huggingface
       - MPLCONFIGDIR=/app/.cache/matplotlib
-      - HOME=/app
     volumes:
       # Mount model directory so weights are not baked into the image during dev
       - ./model:/app/model:ro
@@ -24,6 +24,8 @@ services:
     depends_on:
       - prometheus
     restart: unless-stopped
+  
+  # ... rest of services unchanged
 
   # ── Prometheus ─────────────────────────────────────────────────────────────
   prometheus:
