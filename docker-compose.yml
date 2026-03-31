@@ -12,6 +12,7 @@ services:
       - TRANSFORMERS_CACHE=/app/.cache/transformers
       - HF_HOME=/app/.cache/huggingface
       - MPLCONFIGDIR=/app/.cache/matplotlib
+      - HF_MODEL_ID=model   # ← add this line to point to local model folder
     volumes:
       # Mount model directory so weights are not baked into the image during dev
       - ./model:/app/model:ro
