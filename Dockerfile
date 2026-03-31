@@ -33,12 +33,18 @@ COPY model/ model/
 
 
 # Create cache directories with proper permissions
-RUN mkdir -p /app/.cache/transformers /app/.cache/huggingface /app/.cache/matplotlib && \
-    chown -R appuser:appgroup /app/.cache
+RUN mkdir -p /app/.cache && \
+    mkdir -p /app/.config && \
+    mkdir -p /app/.local && \
+    chmod -R 777 /app/.cache /app/.config /app/.local
 
 # Non-root user for security
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+RUN chown -R appuser:appgroup /app
 USER appuser
+
+# Set HOME to /app (not /nonexistent)
+ENV HOME=/app
 EXPOSE 8000
 
 # Health-check so Docker/k8s can probe readiness
