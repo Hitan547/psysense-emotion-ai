@@ -1,53 +1,43 @@
 # ── Stage 1: builder ──────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
-
 WORKDIR /app
-
-# Install build tools needed for some Python wheels
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
-
 COPY requirements-prod.txt .
 RUN pip install --upgrade pip \
  && pip install --no-cache-dir --prefix=/install -r requirements-prod.txt
 
 # ── Stage 2: runtime ──────────────────────────────────────────────────────────
 FROM python:3.11-slim AS runtime
-
 LABEL maintainer="Hitan K <hitank2004@gmail.com>"
 LABEL org.opencontainers.image.title="PsySense Emotion AI API"
 LABEL org.opencontainers.image.description="Production FastAPI service for multi-label emotion classification"
 LABEL org.opencontainers.image.source="https://github.com/Hitan547/psysense-emotion-ai"
 
 WORKDIR /app
-
-# Copy installed packages from builder stage
 COPY --from=builder /install /usr/local
-
-# Copy application source
 COPY config.py .
 COPY inference.py .
 COPY api/ api/
 COPY model/ model/
 
-
-# Create cache directories with proper permissions
-RUN mkdir -p /app/.cache && \
-    mkdir -p /app/.config && \
-    mkdir -p /app/.local && \
+RUN mkdir -p /app/.cache /app/.config /app/.local && \
     chmod -R 777 /app/.cache /app/.config /app/.local
 
-# Non-root user for security
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-RUN chown -R appuser:appgroup /app
+RUN addgroup --system appgroup && \
+    adduser --system --ingroup appgroup --home /app appuser && \
+    chown -R appuser:appgroup /app
+
 USER appuser
 
-# Set HOME to /app (not /nonexistent)
 ENV HOME=/app
+ENV HF_HOME=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/transformers
+ENV MPLCONFIGDIR=/app/.cache/matplotlib
+
 EXPOSE 8000
 
-# Health-check so Docker/k8s can probe readiness
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
